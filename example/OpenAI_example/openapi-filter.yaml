@@ -1,0 +1,11 @@
+x-openapi-filter:
+  logger:
+    level: debug
+
+paths:
+  /chat/completions:
+    - post
+
+components:
+  securitySchemes:
+    - ApiKeyAuth
