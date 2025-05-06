@@ -8,7 +8,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "openapi-filter input output --config filter_config",
-	Short: "Filter an OpenAPI spec to only include specified paths/methods",
+	Short: "Filter an OpenAPI spec to only include specified paths/methods or components",
 	Args:  cobra.ExactArgs(2),
 	Run:   run,
 }
