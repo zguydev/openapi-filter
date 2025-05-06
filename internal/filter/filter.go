@@ -222,6 +222,118 @@ func (o *OpenAPISpecFilter) Filter(inputSpecPath, outSpecPath string) error {
 		}
 	}
 
+	comp := o.cfg.Components
+	if comp != nil {
+		for _, name := range o.cfg.Components.Schemas {
+			ref := refName("schemas", name)
+			if filtered.Components.Schemas == nil {
+				filtered.Components.Schemas = map[string]*openapi3.SchemaRef{}
+			}
+			if s, ok := doc.Components.Schemas[name]; ok {
+				filtered.Components.Schemas[name] = s
+			} else {
+				o.logger.Warn("schema component from config not found",
+					zap.String("ref", ref))
+			}
+		}
+		for _, name := range o.cfg.Components.Parameters {
+			ref := refName("parameters", name)
+			if filtered.Components.Parameters == nil {
+				filtered.Components.Parameters = map[string]*openapi3.ParameterRef{}
+			}
+			if p, ok := doc.Components.Parameters[name]; ok {
+				filtered.Components.Parameters[name] = p
+			} else {
+				o.logger.Warn("parameters component from config not found",
+					zap.String("ref", ref))
+			}
+		}
+		for _, name := range o.cfg.Components.SecuritySchemes {
+			ref := refName("securitySchemes", name)
+			if filtered.Components.SecuritySchemes == nil {
+				filtered.Components.SecuritySchemes = map[string]*openapi3.SecuritySchemeRef{}
+			}
+			if ss, ok := doc.Components.SecuritySchemes[name]; ok {
+				filtered.Components.SecuritySchemes[name] = ss
+			} else {
+				o.logger.Warn("security schema component from config not found",
+					zap.String("ref", ref))
+			}
+		}
+		for _, name := range o.cfg.Components.RequestBodies {
+			ref := refName("requestBodies", name)
+			if filtered.Components.RequestBodies == nil {
+				filtered.Components.RequestBodies = map[string]*openapi3.RequestBodyRef{}
+			}
+			if rb, ok := doc.Components.RequestBodies[name]; ok {
+				filtered.Components.RequestBodies[name] = rb
+			} else {
+				o.logger.Warn("request body component from config not found",
+					zap.String("ref", ref))
+			}
+		}
+		for _, name := range o.cfg.Components.Responses {
+			ref := refName("responses", name)
+			if filtered.Components.Responses == nil {
+				filtered.Components.Responses = map[string]*openapi3.ResponseRef{}
+			}
+			if r, ok := doc.Components.Responses[name]; ok {
+				filtered.Components.Responses[name] = r
+			} else {
+				o.logger.Warn("response component from config not found",
+					zap.String("ref", ref))
+			}
+		}
+		for _, name := range o.cfg.Components.Headers {
+			ref := refName("headers", name)
+			if filtered.Components.Headers == nil {
+				filtered.Components.Headers = map[string]*openapi3.HeaderRef{}
+			}
+			if h, ok := doc.Components.Headers[name]; ok {
+				filtered.Components.Headers[name] = h
+			} else {
+				o.logger.Warn("headers component from config not found",
+					zap.String("ref", ref))
+			}
+		}
+		for _, name := range o.cfg.Components.Examples {
+			ref := refName("examples", name)
+			if filtered.Components.Examples == nil {
+				filtered.Components.Examples = map[string]*openapi3.ExampleRef{}
+			}
+			if e, ok := doc.Components.Examples[name]; ok {
+				filtered.Components.Examples[name] = e
+			} else {
+				o.logger.Warn("examples component from config not found",
+					zap.String("ref", ref))
+			}
+		}
+		for _, name := range o.cfg.Components.Links {
+			ref := refName("links", name)
+			if filtered.Components.Links == nil {
+				filtered.Components.Links = map[string]*openapi3.LinkRef{}
+			}
+			if l, ok := doc.Components.Links[name]; ok {
+				filtered.Components.Links[name] = l
+			} else {
+				o.logger.Warn("links component from config not found",
+					zap.String("ref", ref))
+			}
+		}
+		for _, name := range o.cfg.Components.Callbacks {
+			ref := refName("callbacks", name)
+			if filtered.Components.Callbacks == nil {
+				filtered.Components.Callbacks = map[string]*openapi3.CallbackRef{}
+			}
+			if c, ok := doc.Components.Callbacks[name]; ok {
+				filtered.Components.Callbacks[name] = c
+			} else {
+				o.logger.Warn("callback component from config not found",
+					zap.String("ref", ref))
+			}
+		}
+	}
+
 	f, err := os.Create(outSpecPath)
 	if err != nil {
 		o.logger.Error("failed to create output spec file",
@@ -240,4 +352,8 @@ func (o *OpenAPISpecFilter) Filter(inputSpecPath, outSpecPath string) error {
 		return fmt.Errorf("encoder.Encode: %w", err)
 	}
 	return nil
+}
+
+func refName(definition, name string) string {
+	return fmt.Sprintf("#/components/%s/%s", definition, name)
 }
