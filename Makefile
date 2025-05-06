@@ -3,7 +3,7 @@ PATH:=$(PATH):$(LOCAL_BIN)
 
 PKG:=github.com/zguydev/openapi-filter
 FILTER_ENTRYPOINT:=.
-FILTER_BIN:=$(LOCAL_BIN)/filter
+FILTER_BIN:=$(LOCAL_BIN)/openapi-filter
 
 ifneq (,$(wildcard .env))
 	include .env
