@@ -2,4 +2,4 @@
 > Filter an OpenAPI spec to only include specified paths/methods or components
 
 ## Examples
-`OpenAI example` - [`./example/OpenAI-example`](./example/OpenAI-example)
+`OpenAI example` - [`./examples/OpenAI/`](./examples/OpenAI/)
