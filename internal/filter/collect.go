@@ -2,7 +2,6 @@ package filter
 
 import "github.com/getkin/kin-openapi/openapi3"
 
-
 func (o *OpenAPISpecFilter) collectOperationRefs(op *openapi3.Operation, refs map[string]struct{}) {
 	for _, param := range op.Parameters {
 		if param.Ref != "" {
@@ -71,9 +70,9 @@ func (o *OpenAPISpecFilter) collectSchemaRecursively(s *openapi3.Schema, refs ma
 	o.collectSchemaRefsRecursively(s.AnyOf, refs)
 	o.collectSchemaRefsRecursively(s.AllOf, refs)
 	o.collectSchemaRefRecursively(s.Not, refs)
-	
+
 	o.collectSchemaRefRecursively(s.Items, refs)
 
 	o.collectSchemasRecursively(s.Properties, refs)
-	o.collectSchemaRefRecursively(s.AdditionalProperties.Schema, refs)	
+	o.collectSchemaRefRecursively(s.AdditionalProperties.Schema, refs)
 }
