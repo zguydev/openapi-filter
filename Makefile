@@ -5,6 +5,8 @@ PKG:=github.com/zguydev/openapi-filter
 FILTER_ENTRYPOINT:=.
 FILTER_BIN:=$(LOCAL_BIN)/openapi-filter
 
+GOLANGCI_LINT_VERSION:=v2.1.6
+
 ifneq (,$(wildcard .env))
 	include .env
 	export
@@ -14,8 +16,14 @@ endif
 .app-deps:
 	go mod tidy
 
+.PHONY: .bin-deps
+.bin-deps:
+	$(info "Installing bin deps...")
+	@mkdir -p $(LOCAL_BIN)
+	@GOBIN=$(LOCAL_BIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+
 .PHONY: install
-install: .app-deps
+install: .bin-deps .app-deps
 
 .PHONY: build
 build:
@@ -25,6 +33,10 @@ build:
 .PHONY: clean
 clean:
 	@rm -i $(LOCAL_BIN)/*
+
+.PHONY: lint
+lint:
+	@$(LOCAL_BIN)/golangci-lint run ./...
 
 .PHONY: test
 test:
