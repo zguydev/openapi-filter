@@ -1,9 +1,17 @@
 package config
 
+type Config struct {
+	Tool         ToolConfig `mapstructure:"x-openapi-filter"`
+	FilterConfig `mapstructure:",squash"`
+}
+
 type FilterConfig struct {
-	Tool       *ToolConfig             `mapstructure:"x-openapi-filter"`
-	Paths      map[string][]string     `mapstructure:"paths"`
-	Components *FilterComponentsConfig `mapstructure:"components"`
+	Servers      bool                    `mapstructure:"servers"`
+	Paths        map[string][]string     `mapstructure:"paths"`
+	Components   *FilterComponentsConfig `mapstructure:"components"`
+	Security     []string                `mapstructure:"security"`
+	Tags         []string                `mapstructure:"tags"`
+	ExternalDocs bool                    `mapstructure:"externalDocs"`
 }
 
 type FilterComponentsConfig struct {
@@ -20,8 +28,13 @@ type FilterComponentsConfig struct {
 
 type ToolConfig struct {
 	Logger *LoggerConfig `mapstructure:"logger"`
+	Loader *LoaderConfig `mapstructure:"loader"`
 }
 
 type LoggerConfig struct {
 	Level string `mapstructure:"level"`
+}
+
+type LoaderConfig struct {
+	IsExternalRefsAllowed bool `mapstructure:"external_refs_allowed"`
 }

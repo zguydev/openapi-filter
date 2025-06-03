@@ -32,16 +32,13 @@ func initConfig[C any](configPath string) (*C, error) {
 	return cfg, nil
 }
 
-func LoadConfig(configPath string) (*FilterConfig, error) {
+func LoadConfig(configPath string) (*Config, error) {
 	if configPath == "" {
 		return nil, ErrConfigPathEmpty
 	}
-	cfg, err := initConfig[FilterConfig](configPath)
+	cfg, err := initConfig[Config](configPath)
 	if err != nil {
-		return nil, fmt.Errorf("initConfig[FilterConfig]: %w", err)
-	}
-	if err := validateFilterConfig(cfg); err != nil {
-		return nil, fmt.Errorf("validateFilterConfig: %w", err)
+		return nil, fmt.Errorf("initConfig[Config]: %w", err)
 	}
 	return cfg, nil
 }
