@@ -9,8 +9,8 @@ type FilterConfig struct {
 	Servers      bool                    `mapstructure:"servers"`
 	Paths        map[string][]string     `mapstructure:"paths"`
 	Components   *FilterComponentsConfig `mapstructure:"components"`
-	Security     []string                `mapstructure:"security"`
-	Tags         []string                `mapstructure:"tags"`
+	Security     bool                    `mapstructure:"security"`
+	Tags         bool                    `mapstructure:"tags"`
 	ExternalDocs bool                    `mapstructure:"externalDocs"`
 }
 

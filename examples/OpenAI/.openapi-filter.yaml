@@ -2,6 +2,8 @@ x-openapi-filter:
   logger:
     level: debug
 
+servers: true
+
 paths:
   /chat/completions:
     - post
@@ -9,3 +11,6 @@ paths:
 components:
   securitySchemes:
     - ApiKeyAuth
+
+security: true
+tags: true

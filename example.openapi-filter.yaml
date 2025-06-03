@@ -4,6 +4,8 @@ x-openapi-filter:
   loader:
     external_refs_allowed: false
 
+servers: false
+
 paths:
   /api/example:
     - post
@@ -11,3 +13,7 @@ paths:
 components:
   securitySchemes:
     - ApiKeyAuth
+
+security: true
+tags: true
+externalDocs: false
