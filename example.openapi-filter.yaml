@@ -1,6 +1,10 @@
 x-openapi-filter:
   logger:
     level: debug
+  loader:
+    external_refs_allowed: false
+
+servers: false
 
 paths:
   /api/example:
@@ -9,3 +13,7 @@ paths:
 components:
   securitySchemes:
     - ApiKeyAuth
+
+security: true
+tags: true
+externalDocs: false
