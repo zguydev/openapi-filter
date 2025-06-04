@@ -1,0 +1,22 @@
+x-openapi-filter:
+  logger:
+    level: debug
+
+servers: true
+
+paths:
+  /pet:
+    - put
+    - post
+  /pet/{petId}/uploadImage:
+    - post
+  /user/login:
+    - get
+
+components:
+  securitySchemes:
+    - petstore_auth
+
+security: true
+tags: true
+externalDocs: true
