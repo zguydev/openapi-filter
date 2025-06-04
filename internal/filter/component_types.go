@@ -70,39 +70,32 @@ func ComponentTypeToDef(typ ComponentType) string {
 	return componentTypeToDefMap[typ]
 }
 
-func ComponentTypeToComponentMap(
+func ComponentTypeToComponentMap[T any](
 	components *openapi3.Components,
 	typ ComponentType,
-) (compMap map[string]any) {
-	var raw any
-
+) (compMap map[string]T) {
 	switch typ {
 	case ComponentTypeSchema:
-		raw = components.Schemas
+		return any(map[string]*openapi3.SchemaRef(components.Schemas)).(map[string]T)
 	case ComponentTypeParameter:
-		raw = components.Parameters
+		return any(map[string]*openapi3.ParameterRef(components.Parameters)).(map[string]T)
 	case ComponentTypeHeader:
-		raw = components.Headers
+		return any(map[string]*openapi3.HeaderRef(components.Headers)).(map[string]T)
 	case ComponentTypeRequestBody:
-		raw = components.RequestBodies
+		return any(map[string]*openapi3.RequestBodyRef(components.RequestBodies)).(map[string]T)
 	case ComponentTypeResponse:
-		raw = components.Responses
+		return any(map[string]*openapi3.ResponseRef(components.Responses)).(map[string]T)
 	case ContentTypeSecuritySchema:
-		raw = components.SecuritySchemes
+		return any(map[string]*openapi3.SecuritySchemeRef(components.SecuritySchemes)).(map[string]T)
 	case ContentTypeExample:
-		raw = components.Examples
+		return any(map[string]*openapi3.ExampleRef(components.Examples)).(map[string]T)
 	case ContentTypeLink:
-		raw = components.Links
+		return any(map[string]*openapi3.LinkRef(components.Links)).(map[string]T)
 	case ContentTypeCallback:
-		raw = components.Callbacks
+		return any(map[string]*openapi3.CallbackRef(components.Callbacks)).(map[string]T)
 	default:
-		panic(fmt.Errorf("not implemented for %T", typ))
+		panic(fmt.Errorf("unsupported component type: %T", typ))
 	}
-
-	if raw == nil {
-		return nil
-	}
-	return compMap
 }
 
 func ComponentTypeToCfgNames(
@@ -129,6 +122,6 @@ func ComponentTypeToCfgNames(
 	case ContentTypeCallback:
 		return cfg.Callbacks
 	default:
-		panic(fmt.Errorf("not implemented for %T", typ))
+		panic(fmt.Errorf("unsupported component type: %T", typ))
 	}
 }
