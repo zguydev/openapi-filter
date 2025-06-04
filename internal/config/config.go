@@ -1,40 +1,40 @@
 package config
 
 type Config struct {
-	Tool         ToolConfig `mapstructure:"x-openapi-filter"`
-	FilterConfig `mapstructure:",squash"`
+	Tool         ToolConfig `koanf:"x-openapi-filter"`
+	FilterConfig `koanf:",squash"`
 }
 
 type FilterConfig struct {
-	Servers      bool                    `mapstructure:"servers"`
-	Paths        map[string][]string     `mapstructure:"paths"`
-	Components   *FilterComponentsConfig `mapstructure:"components"`
-	Security     bool                    `mapstructure:"security"`
-	Tags         bool                    `mapstructure:"tags"`
-	ExternalDocs bool                    `mapstructure:"externalDocs"`
+	Servers      bool                    `koanf:"servers"`
+	Paths        map[string][]string     `koanf:"paths"`
+	Components   *FilterComponentsConfig `koanf:"components"`
+	Security     bool                    `koanf:"security"`
+	Tags         bool                    `koanf:"tags"`
+	ExternalDocs bool                    `koanf:"externalDocs"`
 }
 
 type FilterComponentsConfig struct {
-	Schemas         []string `mapstructure:"schemas"`
-	Parameters      []string `mapstructure:"parameters"`
-	SecuritySchemes []string `mapstructure:"securitySchemes"`
-	RequestBodies   []string `mapstructure:"requestBodies"`
-	Responses       []string `mapstructure:"responses"`
-	Headers         []string `mapstructure:"headers"`
-	Examples        []string `mapstructure:"examples"`
-	Links           []string `mapstructure:"links"`
-	Callbacks       []string `mapstructure:"callbacks"`
+	Schemas         []string `koanf:"schemas"`
+	Parameters      []string `koanf:"parameters"`
+	SecuritySchemes []string `koanf:"securitySchemes"`
+	RequestBodies   []string `koanf:"requestBodies"`
+	Responses       []string `koanf:"responses"`
+	Headers         []string `koanf:"headers"`
+	Examples        []string `koanf:"examples"`
+	Links           []string `koanf:"links"`
+	Callbacks       []string `koanf:"callbacks"`
 }
 
 type ToolConfig struct {
-	Logger *LoggerConfig `mapstructure:"logger"`
-	Loader *LoaderConfig `mapstructure:"loader"`
+	Logger *LoggerConfig `koanf:"logger"`
+	Loader *LoaderConfig `koanf:"loader"`
 }
 
 type LoggerConfig struct {
-	Level string `mapstructure:"level"`
+	Level string `koanf:"level"`
 }
 
 type LoaderConfig struct {
-	IsExternalRefsAllowed bool `mapstructure:"external_refs_allowed"`
+	IsExternalRefsAllowed bool `koanf:"external_refs_allowed"`
 }

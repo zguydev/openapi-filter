@@ -1,0 +1,16 @@
+servers = true
+security = true
+tags = true
+
+[x-openapi-filter.logger]
+level = "debug"
+
+[paths]
+"/version" = [ "get" ]
+"/broadcast_messages/{id}" = [ "get", "put", "delete" ]
+"/broadcast_messages" = [ "get", "post" ]
+"/applications" = [ "get", "post" ]
+"/applications/{id}" = [ "delete" ]
+
+[components]
+securitySchemes = [ "ApiKeyAuth" ]
