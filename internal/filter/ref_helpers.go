@@ -16,10 +16,12 @@ func parseRef(ref string) (def, name string, ok bool) {
 	return def, name, true
 }
 
-func initializeComponentMap[M ~map[string]V, V any](targetMap *M) {
+func initializeComponentMap[M ~map[string]V, V any](targetMap *M) bool {
 	if *targetMap == nil {
 		*targetMap = make(M)
+		return true
 	}
+	return false
 }
 
 func copyComponent[M ~map[string]V, V any](
@@ -33,14 +35,16 @@ func copyComponent[M ~map[string]V, V any](
 	return false
 }
 
-func processCopyComponentGeneric[T any](
+func processCopyComponentByType[T any](
 	docComps, filteredComps *openapi3.Components,
 	typ ComponentType,
 	name string,
 ) (ok bool) {
 	docCompMap := ComponentTypeToComponentMap[T](docComps, typ)
 	filteredCompMap := ComponentTypeToComponentMap[T](filteredComps, typ)
-	initializeComponentMap(&filteredCompMap)
+	if initializeComponentMap(&filteredCompMap) {
+		setComponentMapInComponents(filteredComps, typ, filteredCompMap)
+	}
 	return copyComponent(docCompMap, filteredCompMap, name)
 }
 
@@ -51,23 +55,52 @@ func processCopyComponent(
 ) (ok bool) {
 	switch typ {
 	case ComponentTypeSchema:
-		return processCopyComponentGeneric[*openapi3.SchemaRef](docComps, filteredComps, typ, name)
+		return processCopyComponentByType[*openapi3.SchemaRef](docComps, filteredComps, typ, name)
 	case ComponentTypeParameter:
-		return processCopyComponentGeneric[*openapi3.ParameterRef](docComps, filteredComps, typ, name)
+		return processCopyComponentByType[*openapi3.ParameterRef](docComps, filteredComps, typ, name)
 	case ComponentTypeHeader:
-		return processCopyComponentGeneric[*openapi3.HeaderRef](docComps, filteredComps, typ, name)
+		return processCopyComponentByType[*openapi3.HeaderRef](docComps, filteredComps, typ, name)
 	case ComponentTypeRequestBody:
-		return processCopyComponentGeneric[*openapi3.RequestBodyRef](docComps, filteredComps, typ, name)
+		return processCopyComponentByType[*openapi3.RequestBodyRef](docComps, filteredComps, typ, name)
 	case ComponentTypeResponse:
-		return processCopyComponentGeneric[*openapi3.ResponseRef](docComps, filteredComps, typ, name)
+		return processCopyComponentByType[*openapi3.ResponseRef](docComps, filteredComps, typ, name)
 	case ContentTypeSecuritySchema:
-		return processCopyComponentGeneric[*openapi3.SecuritySchemeRef](docComps, filteredComps, typ, name)
+		return processCopyComponentByType[*openapi3.SecuritySchemeRef](docComps, filteredComps, typ, name)
 	case ContentTypeExample:
-		return processCopyComponentGeneric[*openapi3.ExampleRef](docComps, filteredComps, typ, name)
+		return processCopyComponentByType[*openapi3.ExampleRef](docComps, filteredComps, typ, name)
 	case ContentTypeLink:
-		return processCopyComponentGeneric[*openapi3.LinkRef](docComps, filteredComps, typ, name)
+		return processCopyComponentByType[*openapi3.LinkRef](docComps, filteredComps, typ, name)
 	case ContentTypeCallback:
-		return processCopyComponentGeneric[*openapi3.CallbackRef](docComps, filteredComps, typ, name)
+		return processCopyComponentByType[*openapi3.CallbackRef](docComps, filteredComps, typ, name)
+	default:
+		panic(fmt.Errorf("unsupported component type: %v", typ))
+	}
+}
+
+func setComponentMapInComponents[T any](
+	components *openapi3.Components,
+	typ ComponentType,
+	compMap map[string]T,
+) {
+	switch typ {
+	case ComponentTypeSchema:
+		components.Schemas = any(compMap).(map[string]*openapi3.SchemaRef)
+	case ComponentTypeParameter:
+		components.Parameters = any(compMap).(map[string]*openapi3.ParameterRef)
+	case ComponentTypeHeader:
+		components.Headers = any(compMap).(map[string]*openapi3.HeaderRef)
+	case ComponentTypeRequestBody:
+		components.RequestBodies = any(compMap).(map[string]*openapi3.RequestBodyRef)
+	case ComponentTypeResponse:
+		components.Responses = any(compMap).(map[string]*openapi3.ResponseRef)
+	case ContentTypeSecuritySchema:
+		components.SecuritySchemes = any(compMap).(map[string]*openapi3.SecuritySchemeRef)
+	case ContentTypeExample:
+		components.Examples = any(compMap).(map[string]*openapi3.ExampleRef)
+	case ContentTypeLink:
+		components.Links = any(compMap).(map[string]*openapi3.LinkRef)
+	case ContentTypeCallback:
+		components.Callbacks = any(compMap).(map[string]*openapi3.CallbackRef)
 	default:
 		panic(fmt.Errorf("unsupported component type: %v", typ))
 	}
@@ -97,7 +130,7 @@ func isComponentMapEmpty(
 	case ContentTypeCallback:
 		return len(components.Callbacks) != 0
 	default:
-		panic(fmt.Errorf("unsupported component type: %T", typ))
+		panic(fmt.Errorf("unsupported component type: %v", typ))
 	}
 }
 
