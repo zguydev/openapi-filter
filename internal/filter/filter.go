@@ -18,7 +18,10 @@ type OpenAPISpecFilter struct {
 	filtered, doc *openapi3.T
 }
 
-func NewOpenAPISpecFilter(cfg *config.Config, logger *zap.Logger) *OpenAPISpecFilter {
+func NewOpenAPISpecFilter(
+	cfg *config.Config,
+	logger *zap.Logger,
+) *OpenAPISpecFilter {
 	loader := openapi3.NewLoader()
 	if cfg.Tool.Loader != nil {
 		loader.IsExternalRefsAllowed = cfg.Tool.Loader.IsExternalRefsAllowed
@@ -77,7 +80,8 @@ func (oaf *OpenAPISpecFilter) filterPaths(collector *RefsCollector) {
 			op := oaf.getOperation(pathItem, method, path)
 			if op == nil {
 				oaf.logger.Warn("method not exists for specified path",
-					zap.String("path", path), zap.String("method", method))
+					zap.String("path", path),
+					zap.String("method", method))
 				continue
 			}
 			if !oaf.setOperation(newPathItem, method, path, op) {
@@ -92,11 +96,15 @@ func (oaf *OpenAPISpecFilter) filterPaths(collector *RefsCollector) {
 	oaf.filterRefs(collector.Refs())
 }
 
-func (oaf *OpenAPISpecFilter) getOperation(p *openapi3.PathItem, method, path string) (op *openapi3.Operation) {
+func (oaf *OpenAPISpecFilter) getOperation(
+	p *openapi3.PathItem,
+	method, path string,
+) (op *openapi3.Operation) {
 	defer func() {
 		if r := recover(); r != nil {
 			oaf.logger.Warn("unknown HTTP method in filter config",
-				zap.String("path", path), zap.String("method", method))
+				zap.String("path", path),
+				zap.String("method", method))
 			op = nil
 		}
 	}()
@@ -111,7 +119,8 @@ func (oaf *OpenAPISpecFilter) setOperation(
 	defer func() {
 		if r := recover(); r != nil {
 			oaf.logger.Warn("unknown HTTP method in spec",
-				zap.String("path", path), zap.String("method", method))
+				zap.String("path", path),
+				zap.String("method", method))
 			ok = false
 		}
 	}()
