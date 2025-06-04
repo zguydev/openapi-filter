@@ -6,30 +6,41 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/viper"
+	"github.com/knadh/koanf/parsers/json"
+	"github.com/knadh/koanf/parsers/toml"
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/v2"
 )
 
 var ErrConfigPathEmpty = errors.New("config path is empty")
 
 func initConfig[C any](configPath string) (*C, error) {
-	v := viper.New()
+	k := koanf.New(".")
+
 	configExt := strings.TrimLeft(filepath.Ext(configPath), ".")
-	v.SetConfigFile(configPath)
-	v.SetConfigType(configExt)
 
-	if err := v.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("v.ReadInConfig: %w", err)
+	var parser koanf.Parser
+	switch configExt {
+	case "yaml", "yml":
+		parser = yaml.Parser()
+	case "toml":
+		parser = toml.Parser()
+	case "json":
+		parser = json.Parser()
+	default:
+		return nil, fmt.Errorf("unsupported config format: %s", configExt)
 	}
 
-	for _, k := range v.AllKeys() {
-		v.Set(k, v.Get(k))
+	if err := k.Load(file.Provider(configPath), parser); err != nil {
+		return nil, fmt.Errorf("k.Load: %w", err)
 	}
 
-	cfg := new(C)
-	if err := v.Unmarshal(cfg); err != nil {
-		return nil, fmt.Errorf("v.Unmarshal: %w", err)
+	var cfg C
+	if err := k.Unmarshal("", &cfg); err != nil {
+		return nil, fmt.Errorf("k.Unmarshal: %w", err)
 	}
-	return cfg, nil
+	return &cfg, nil
 }
 
 func LoadConfig(configPath string) (*Config, error) {
