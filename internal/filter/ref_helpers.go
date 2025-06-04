@@ -1,52 +1,57 @@
 package filter
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"go.uber.org/zap"
 )
 
-func refName(def, name string) (ref string) {
-	return fmt.Sprintf("#/components/%s/%s", def, name)
-}
-
-func parseRef(ref string) (def, name string) {
+func parseRef(ref string) (def, name string, ok bool) {
 	elems := strings.Split(ref, "/")
+	if len(elems) != 4 {
+		return "", "", false
+	}
 	def, name = elems[2], elems[3]
-	return def, name
+	return def, name, true
 }
 
-func initializeDef[M ~map[string]V, V any](targetMap *M) {
+func initializeComponentMap[M ~map[string]V, V any](targetMap *M) {
 	if *targetMap == nil {
 		*targetMap = make(M)
 	}
 }
 
-func copyComponent[V any](
-	logger *zap.Logger,
-	docDef, filteredDef map[string]V,
-	name, ref string,
-) {
-	if component, ok := docDef[name]; ok {
-		filteredDef[name] = component
-	} else {
-		logger.Warn("component not found", zap.String("ref", ref))
+func copyComponent[M ~map[string]V, V any](
+	docCompMap, filteredCompMap M,
+	name string,
+) (ok bool) {
+	if component, ok := docCompMap[name]; ok {
+		filteredCompMap[name] = component
+		return true
 	}
+	return false
+}
+
+func processCopyComponent(
+	docComps, filteredComps *openapi3.Components,
+	typ ComponentType,
+	name string,
+) (ok bool) {
+	docCompMap := ComponentTypeToComponentMap(docComps, typ)
+	filteredCompMap := ComponentTypeToComponentMap(filteredComps, typ)
+	initializeComponentMap(&filteredCompMap)
+	return copyComponent(docCompMap, filteredCompMap, name)
 }
 
 func isEmptyComponents(c *openapi3.Components) bool {
 	if c == nil {
 		return true
 	}
-	return len(c.Schemas) == 0 &&
-		len(c.Parameters) == 0 &&
-		len(c.Headers) == 0 &&
-		len(c.RequestBodies) == 0 &&
-		len(c.Responses) == 0 &&
-		len(c.SecuritySchemes) == 0 &&
-		len(c.Examples) == 0 &&
-		len(c.Links) == 0 &&
-		len(c.Callbacks) == 0
+	for _, compTyp := range ComponentTypes() {
+		compMap := ComponentTypeToComponentMap(c, compTyp)
+		if len(compMap) != 0 {
+			return false
+		}
+	}
+	return true
 }
