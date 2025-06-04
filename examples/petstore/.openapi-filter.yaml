@@ -3,6 +3,9 @@ x-openapi-filter:
     level: debug
 
 servers: true
+security: true
+tags: true
+externalDocs: true
 
 paths:
   /pet:
@@ -16,7 +19,3 @@ paths:
 components:
   securitySchemes:
     - petstore_auth
-
-security: true
-tags: true
-externalDocs: true

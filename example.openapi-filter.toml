@@ -1,0 +1,17 @@
+servers = false
+security = true
+tags = true
+externalDocs = false
+
+[x-openapi-filter.logger]
+level = "debug"
+
+[x-openapi-filter.loader]
+external_refs_allowed = false
+
+[paths]
+"/api/example" = [ "get", "post" ]
+"/api/some-another" = [ "put" ]
+
+[components]
+securitySchemes = [ "ApiKeyAuth" ]

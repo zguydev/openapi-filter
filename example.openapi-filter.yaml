@@ -5,15 +5,17 @@ x-openapi-filter:
     external_refs_allowed: false
 
 servers: false
+security: true
+tags: true
+externalDocs: false
 
 paths:
   /api/example:
+    - get
     - post
+  /api/some-another:
+    - put
 
 components:
   securitySchemes:
     - ApiKeyAuth
-
-security: true
-tags: true
-externalDocs: false
