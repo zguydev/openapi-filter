@@ -7,7 +7,8 @@
 ## Examples
 Explore ready-to-use examples:
 
-| Example Name           | Description                   | Path                                         |
-| ---------------------- | ----------------------------- | -------------------------------------------- |
-| 🤖 **OpenAI Example**   | Filters for OpenAI API schema | [`examples/OpenAI/`](./examples/OpenAI/)     |
-| 🐶 **Petstore Example** | Classic Swagger Petstore demo | [`examples/petstore/`](./examples/petstore/) |
+| Example Name           | Description                               | Path                                        |
+| ---------------------- | ----------------------------------------- | ------------------------------------------- |
+| 🤖 **OpenAI Example**   | Filters for OpenAI API schema             | [`examples/OpenAI`](./examples/OpenAI/)     |
+| 🐶 **Petstore Example** | Classic Swagger Petstore demo             | [`examples/petstore`](./examples/petstore/) |
+| 🦊 **GitLab Example**   | TOML filter example for GitLab API schema | [`examples/gitlab`](./examples/gitlab/)     |

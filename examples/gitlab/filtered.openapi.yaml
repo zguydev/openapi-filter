@@ -1,0 +1,560 @@
+components:
+  schemas:
+    API_Entities_Application:
+      description: API_Entities_Application model
+      properties:
+        application_id:
+          example: 5832fc6e14300a0d962240a8144466eef4ee93ef0d218477e55f11cf12fc3737
+          type: string
+        application_name:
+          example: MyApplication
+          type: string
+        callback_url:
+          example: https://redirect.uri
+          type: string
+        confidential:
+          example: true
+          type: boolean
+        id:
+          type: string
+      type: object
+    API_Entities_ApplicationWithSecret:
+      description: API_Entities_ApplicationWithSecret model
+      properties:
+        application_id:
+          example: 5832fc6e14300a0d962240a8144466eef4ee93ef0d218477e55f11cf12fc3737
+          type: string
+        application_name:
+          example: MyApplication
+          type: string
+        callback_url:
+          example: https://redirect.uri
+          type: string
+        confidential:
+          example: true
+          type: boolean
+        id:
+          type: string
+        secret:
+          example: ee1dd64b6adc89cf7e2c23099301ccc2c61b441064e9324d963c46902a85ec34
+          type: string
+      type: object
+    API_Entities_BroadcastMessage:
+      description: API_Entities_BroadcastMessage model
+      properties:
+        active:
+          type: string
+        broadcast_type:
+          type: string
+        color:
+          type: string
+        dismissable:
+          type: string
+        ends_at:
+          type: string
+        font:
+          type: string
+        id:
+          type: string
+        message:
+          type: string
+        starts_at:
+          type: string
+        target_access_levels:
+          type: string
+        target_path:
+          type: string
+      type: object
+    API_Entities_Metadata:
+      description: API_Entities_Metadata model
+      properties:
+        enterprise:
+          type: boolean
+        kas:
+          properties:
+            enabled:
+              type: boolean
+            externalUrl:
+              example: grpc://gitlab.example.com:8150
+              type: string
+            version:
+              example: 15.0.0
+              type: string
+          type: object
+        revision:
+          example: c401a659d0c
+          type: string
+        version:
+          example: 15.2-pre
+          type: string
+      type: object
+  securitySchemes:
+    ApiKeyAuth:
+      in: header
+      name: Private-Token
+      type: apiKey
+info:
+  description: |
+    An OpenAPI definition for the GitLab REST API.
+    Few API resources or endpoints are currently included.
+    The intent is to expand this to match the entire Markdown documentation of the API:
+    <https://docs.gitlab.com/ee/api/>. Contributions are welcome.
+
+    When viewing this on gitlab.com, you can test API calls directly from the browser
+    against the `gitlab.com` instance, if you are logged in.
+    The feature uses the current [GitLab session cookie](https://docs.gitlab.com/ee/api/#session-cookie),
+    so each request is made using your account.
+
+    Instructions for using this tool can be found in [Interactive API Documentation](https://docs.gitlab.com/ee/api/openapi/openapi_interactive.html)
+  license:
+    name: CC BY-SA 4.0
+    url: https://gitlab.com/gitlab-org/gitlab/-/blob/master/LICENSE
+  termsOfService: https://about.gitlab.com/terms/
+  title: GitLab API
+  version: v4
+openapi: 3.0.1
+paths:
+  /applications:
+    get:
+      description: List all registered applications
+      operationId: getApiV4Applications
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/API_Entities_Application'
+                type: array
+          description: Get applications
+      summary: Get applications
+      tags:
+        - applications
+    post:
+      description: This feature was introduced in GitLab 10.5
+      operationId: postApiV4Applications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                confidential:
+                  default: true
+                  description: |-
+                    The application is used where the client secret can be kept confidential. Native mobile apps \
+                                            and Single Page Apps are considered non-confidential. Defaults to true if not supplied
+                  type: boolean
+                name:
+                  description: Name of the application.
+                  type: string
+                redirect_uri:
+                  description: Redirect URI of the application.
+                  type: string
+                scopes:
+                  description: |-
+                    Scopes of the application. You can specify multiple scopes by separating\
+                                                     each scope using a space
+                  type: string
+              required:
+                - name
+                - redirect_uri
+                - scopes
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/API_Entities_ApplicationWithSecret'
+          description: Create a new application
+      summary: Create a new application
+      tags:
+        - applications
+  /applications/{id}:
+    delete:
+      description: Delete a specific application
+      operationId: deleteApiV4ApplicationsId
+      parameters:
+        - description: The ID of the application (not the application_id)
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "204":
+          description: Delete an application
+      summary: Delete an application
+      tags:
+        - applications
+  /broadcast_messages:
+    get:
+      description: This feature was introduced in GitLab 8.12.
+      operationId: getApiV4BroadcastMessages
+      parameters:
+        - description: Current page number
+          in: query
+          name: page
+          schema:
+            default: 1
+            format: int32
+            type: integer
+        - description: Number of items per page
+          in: query
+          name: per_page
+          schema:
+            default: 20
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/API_Entities_BroadcastMessage'
+          description: Get all broadcast messages
+      summary: Get all broadcast messages
+      tags:
+        - broadcast_messages
+    post:
+      description: This feature was introduced in GitLab 8.12.
+      operationId: postApiV4BroadcastMessages
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                broadcast_type:
+                  description: Broadcast type. Defaults to banner
+                  enum:
+                    - banner
+                    - notification
+                  type: string
+                color:
+                  description: Background color
+                  type: string
+                dismissable:
+                  description: Is dismissable
+                  type: boolean
+                ends_at:
+                  description: Ending time
+                  format: date-time
+                  type: string
+                font:
+                  description: Foreground color
+                  type: string
+                message:
+                  description: Message to display
+                  type: string
+                starts_at:
+                  description: Starting time
+                  format: date-time
+                  type: string
+                target_access_levels:
+                  description: Target user roles
+                  items:
+                    enum:
+                      - 10
+                      - 20
+                      - 30
+                      - 40
+                      - 50
+                    format: int32
+                    type: integer
+                  type: array
+                target_path:
+                  description: Target path
+                  type: string
+              required:
+                - message
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/API_Entities_BroadcastMessage'
+          description: Create a broadcast message
+      summary: Create a broadcast message
+      tags:
+        - broadcast_messages
+  /broadcast_messages/{id}:
+    delete:
+      description: This feature was introduced in GitLab 8.12.
+      operationId: deleteApiV4BroadcastMessagesId
+      parameters:
+        - description: Broadcast message ID
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/API_Entities_BroadcastMessage'
+          description: Delete a broadcast message
+      summary: Delete a broadcast message
+      tags:
+        - broadcast_messages
+    get:
+      description: This feature was introduced in GitLab 8.12.
+      operationId: getApiV4BroadcastMessagesId
+      parameters:
+        - description: Broadcast message ID
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/API_Entities_BroadcastMessage'
+          description: Get a specific broadcast message
+      summary: Get a specific broadcast message
+      tags:
+        - broadcast_messages
+    put:
+      description: This feature was introduced in GitLab 8.12.
+      operationId: putApiV4BroadcastMessagesId
+      parameters:
+        - description: Broadcast message ID
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                broadcast_type:
+                  description: Broadcast Type
+                  enum:
+                    - banner
+                    - notification
+                  type: string
+                color:
+                  description: Background color
+                  type: string
+                dismissable:
+                  description: Is dismissable
+                  type: boolean
+                ends_at:
+                  description: Ending time
+                  format: date-time
+                  type: string
+                font:
+                  description: Foreground color
+                  type: string
+                message:
+                  description: Message to display
+                  type: string
+                starts_at:
+                  description: Starting time
+                  format: date-time
+                  type: string
+                target_access_levels:
+                  description: Target user roles
+                  items:
+                    enum:
+                      - 10
+                      - 20
+                      - 30
+                      - 40
+                      - 50
+                    format: int32
+                    type: integer
+                  type: array
+                target_path:
+                  description: Target path
+                  type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/API_Entities_BroadcastMessage'
+          description: Update a broadcast message
+      summary: Update a broadcast message
+      tags:
+        - broadcast_messages
+  /version:
+    get:
+      description: This feature was introduced in GitLab 8.13 and deprecated in 15.5. We recommend you instead use the Metadata API.
+      operationId: getApiV4Version
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/API_Entities_Metadata'
+          description: Retrieves version information for the GitLab instance
+        "401":
+          description: Unauthorized
+      summary: Retrieves version information for the GitLab instance
+      tags:
+        - metadata
+security:
+  - ApiKeyAuth: []
+servers:
+  - url: https://www.gitlab.com/api/v4
+tags:
+  - description: Operations about badges
+    name: badges
+  - description: Operations about branches
+    name: branches
+  - description: Operations about alert_managements
+    name: alert_management
+  - description: Operations about batched_background_migrations
+    name: batched_background_migrations
+  - description: Operations about admins
+    name: admin
+  - description: Operations about migrations
+    name: migrations
+  - description: Operations about applications
+    name: applications
+  - description: Operations about avatars
+    name: avatar
+  - description: Operations about broadcast_messages
+    name: broadcast_messages
+  - description: Operations about bulk_imports
+    name: bulk_imports
+  - description: Operations about applications
+    name: application
+  - description: Operations related to access requests
+    name: access_requests
+  - description: Operations related to linting a CI config file
+    name: ci_lint
+  - description: Operations to manage job concurrency with resource groups
+    name: ci_resource_groups
+  - description: Operations related to CI/CD variables
+    name: ci_variables
+  - description: Operations related to the GitLab agent for Kubernetes
+    name: cluster_agents
+  - description: Operations related to clusters
+    name: clusters
+  - description: Operations related to Composer packages
+    name: composer_packages
+  - description: Operations related to Conan packages
+    name: conan_packages
+  - description: Operations related to container registry
+    name: container_registry
+  - description: Operations related to container registry events
+    name: container_registry_event
+  - description: Operations related to Debian Linux distributions
+    name: debian_distribution
+  - description: Operations related to Debian Linux packages
+    name: debian_packages
+  - description: Operations to manage dependency proxy for a groups
+    name: dependency_proxy
+  - description: Operations related to deploy keys
+    name: deploy_keys
+  - description: Operations related to deploy tokens
+    name: deploy_tokens
+  - description: Operations related to deployments
+    name: deployments
+  - description: Operations related to DevOps Research and Assessment (DORA) key metrics
+    name: dora_metrics
+  - description: Operations related to environments
+    name: environments
+  - description: Operations related to error tracking client keys
+    name: error_tracking_client_keys
+  - description: Operations related to error tracking project settings
+    name: error_tracking_project_settings
+  - description: Operations related to accessing GitLab feature flag user lists
+    name: feature_flags_user_lists
+  - description: Operations related to feature flags
+    name: feature_flags
+  - description: Operations related to managing Flipper-based feature flags
+    name: features
+  - description: Operations related to deploy freeze periods
+    name: freeze_periods
+  - description: Operations related to Generic packages
+    name: generic_packages
+  - description: Operations related to Geo
+    name: geo
+  - description: Operations related Geo Nodes
+    name: geo_nodes
+  - description: Operations related to Go Proxy
+    name: go_proxy
+  - description: Operations related to exporting groups
+    name: group_export
+  - description: Operations related to importing groups
+    name: group_import
+  - description: Operations related to group packages
+    name: group_packages
+  - description: Operations related to Helm packages
+    name: helm_packages
+  - description: Operations related to integrations
+    name: integrations
+  - description: Operations related to issue links
+    name: issue_links
+  - description: Operations related to JiraConnect subscriptions
+    name: jira_connect_subscriptions
+  - description: Operations related to CI Jobs
+    name: jobs
+  - description: Operations related to Maven packages
+    name: maven_packages
+  - description: Operations related to merge requests
+    name: merge_requests
+  - description: Operations related to metadata of the GitLab instance
+    name: metadata
+  - description: Operations related to Model registry
+    name: ml_model_registry
+  - description: Operations related to NPM packages
+    name: npm_packages
+  - description: Operations related to Nuget packages
+    name: nuget_packages
+  - description: Operations about package files
+    name: package_files
+  - description: Operations related to plan limits
+    name: plan_limits
+  - description: Operations related to exporting projects
+    name: project_export
+  - description: Operations related to project hooks
+    name: project_hooks
+  - description: Operations related to importing projects
+    name: project_import
+  - description: Operations related to importing BitBucket projects
+    name: project_import_bitbucket
+  - description: Operations related to importing GitHub projects
+    name: project_import_github
+  - description: Operations related to project packages
+    name: project_packages
+  - description: Operations related to projects
+    name: projects
+  - description: Operations related to protected environments
+    name: protected environments
+  - description: Operations related to PyPI packages
+    name: pypi_packages
+  - description: Operations related to release assets (links)
+    name: release_links
+  - description: Operations related to releases
+    name: releases
+  - description: Operations about resource milestone events
+    name: resource_milestone_events
+  - description: Operations related to RPM packages
+    name: rpm_packages
+  - description: Operations related to RubyGems
+    name: rubygem_packages
+  - description: Operations related to suggestions
+    name: suggestions
+  - description: Operations related to system hooks
+    name: system_hooks
+  - description: Operations related to Terraform state files
+    name: terraform_state
+  - description: Operations related to the Terraform module registry
+    name: terraform_registry
+  - description: Operations related to Unleash API
+    name: unleash_api
