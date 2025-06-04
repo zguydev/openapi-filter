@@ -18,7 +18,10 @@ type OpenAPISpecFilter struct {
 	filtered, doc *openapi3.T
 }
 
-func NewOpenAPISpecFilter(cfg *config.Config, logger *zap.Logger) *OpenAPISpecFilter {
+func NewOpenAPISpecFilter(
+	cfg *config.Config,
+	logger *zap.Logger,
+) *OpenAPISpecFilter {
 	loader := openapi3.NewLoader()
 	if cfg.Tool.Loader != nil {
 		loader.IsExternalRefsAllowed = cfg.Tool.Loader.IsExternalRefsAllowed
@@ -77,7 +80,8 @@ func (oaf *OpenAPISpecFilter) filterPaths(collector *RefsCollector) {
 			op := oaf.getOperation(pathItem, method, path)
 			if op == nil {
 				oaf.logger.Warn("method not exists for specified path",
-					zap.String("path", path), zap.String("method", method))
+					zap.String("path", path),
+					zap.String("method", method))
 				continue
 			}
 			if !oaf.setOperation(newPathItem, method, path, op) {
@@ -92,22 +96,31 @@ func (oaf *OpenAPISpecFilter) filterPaths(collector *RefsCollector) {
 	oaf.filterRefs(collector.Refs())
 }
 
-func (oaf *OpenAPISpecFilter) getOperation(p *openapi3.PathItem, method, path string) (op *openapi3.Operation) {
+func (oaf *OpenAPISpecFilter) getOperation(
+	p *openapi3.PathItem,
+	method, path string,
+) (op *openapi3.Operation) {
 	defer func() {
 		if r := recover(); r != nil {
 			oaf.logger.Warn("unknown HTTP method in filter config",
-				zap.String("path", path), zap.String("method", method))
+				zap.String("path", path),
+				zap.String("method", method))
 			op = nil
 		}
 	}()
 	return p.GetOperation(strings.ToUpper(method))
 }
 
-func (oaf *OpenAPISpecFilter) setOperation(p *openapi3.PathItem, method, path string, operation *openapi3.Operation) (ok bool) {
+func (oaf *OpenAPISpecFilter) setOperation(
+	p *openapi3.PathItem,
+	method, path string,
+	operation *openapi3.Operation,
+) (ok bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			oaf.logger.Warn("unknown HTTP method in spec",
-				zap.String("path", path), zap.String("method", method))
+				zap.String("path", path),
+				zap.String("method", method))
 			ok = false
 		}
 	}()
@@ -122,90 +135,49 @@ func (oaf *OpenAPISpecFilter) filterRefs(refs map[string]struct{}) {
 }
 
 func (oaf *OpenAPISpecFilter) filterRef(ref string) {
-	var (
-		dc = oaf.doc.Components
-		fc = oaf.filtered.Components
-	)
-	def, name := parseRef(ref)
+	if oaf.doc.Components == nil {
+		return
+	}
 
-	switch def {
-	case "schemas":
-		initializeDef(&fc.Schemas)
-		copyComponent(oaf.logger, dc.Schemas, fc.Schemas, name, ref)
-	case "parameters":
-		initializeDef(&fc.Parameters)
-		copyComponent(oaf.logger, dc.Parameters, fc.Parameters, name, ref)
-	case "headers":
-		initializeDef(&fc.Headers)
-		copyComponent(oaf.logger, dc.Headers, fc.Headers, name, ref)
-	case "requestBodies":
-		initializeDef(&fc.RequestBodies)
-		copyComponent(oaf.logger, dc.RequestBodies, fc.RequestBodies, name, ref)
-	case "responses":
-		initializeDef(&fc.Responses)
-		copyComponent(oaf.logger, dc.Responses, fc.Responses, name, ref)
-	case "securitySchemes":
-		initializeDef(&fc.SecuritySchemes)
-		copyComponent(oaf.logger, dc.SecuritySchemes, fc.SecuritySchemes, name, ref)
-	case "examples":
-		initializeDef(&fc.Examples)
-		copyComponent(oaf.logger, dc.Examples, fc.Examples, name, ref)
-	case "links":
-		initializeDef(&fc.Links)
-		copyComponent(oaf.logger, dc.Links, fc.Links, name, ref)
-	case "callbacks":
-		initializeDef(&fc.Callbacks)
-		copyComponent(oaf.logger, dc.Callbacks, fc.Callbacks, name, ref)
-	default:
-		oaf.logger.Warn("unhandled $ref", zap.String("ref", ref))
+	def, name, ok := parseRef(ref)
+	if !ok {
+		oaf.logger.Warn("incorrect ref", zap.String("ref", ref))
+		return
+	}
+
+	compType, ok := ComponentDefToType(def)
+	if !ok {
+		oaf.logger.Warn("unknown component definition",
+			zap.String("def", def), zap.String("ref", ref))
+		return
+	}
+	if !processCopyComponent(
+		oaf.doc.Components,
+		oaf.filtered.Components,
+		compType, name) {
+		oaf.logger.Warn("component not found",
+			zap.String("name", name),
+			zap.String("def", def),
+			zap.String("ref", ref))
 	}
 }
 
 func (oaf *OpenAPISpecFilter) filterComponents() {
-	componentsCfg := oaf.cfg.Components
-	if componentsCfg == nil {
+	if oaf.cfg.Components == nil || oaf.doc.Components == nil {
 		return
 	}
-	var (
-		dc = oaf.doc.Components
-		fc = oaf.filtered.Components
-	)
 
-	for _, name := range componentsCfg.Schemas {
-		initializeDef(&fc.Schemas)
-		copyComponent(oaf.logger, dc.Schemas, fc.Schemas, name, refName("schemas", name))
-	}
-	for _, name := range componentsCfg.Parameters {
-		initializeDef(&fc.Parameters)
-		copyComponent(oaf.logger, dc.Parameters, fc.Parameters, name, refName("parameters", name))
-	}
-	for _, name := range componentsCfg.SecuritySchemes {
-		initializeDef(&fc.SecuritySchemes)
-		copyComponent(oaf.logger, dc.SecuritySchemes, fc.SecuritySchemes, name, refName("securitySchemes", name))
-	}
-	for _, name := range componentsCfg.RequestBodies {
-		initializeDef(&fc.RequestBodies)
-		copyComponent(oaf.logger, dc.RequestBodies, fc.RequestBodies, name, refName("requestBodies", name))
-	}
-	for _, name := range componentsCfg.Responses {
-		initializeDef(&fc.Responses)
-		copyComponent(oaf.logger, dc.Responses, fc.Responses, name, refName("responses", name))
-	}
-	for _, name := range componentsCfg.Headers {
-		initializeDef(&fc.Headers)
-		copyComponent(oaf.logger, dc.Headers, fc.Headers, name, refName("headers", name))
-	}
-	for _, name := range componentsCfg.Examples {
-		initializeDef(&fc.Examples)
-		copyComponent(oaf.logger, dc.Examples, fc.Examples, name, refName("examples", name))
-	}
-	for _, name := range componentsCfg.Links {
-		initializeDef(&fc.Links)
-		copyComponent(oaf.logger, dc.Links, fc.Links, name, refName("links", name))
-	}
-	for _, name := range componentsCfg.Callbacks {
-		initializeDef(&fc.Callbacks)
-		copyComponent(oaf.logger, dc.Callbacks, fc.Callbacks, name, refName("callbacks", name))
+	for _, compTyp := range ComponentTypes() {
+		for _, name := range ComponentTypeToCfgNames(oaf.cfg.Components, compTyp) {
+			if !processCopyComponent(
+				oaf.doc.Components,
+				oaf.filtered.Components,
+				compTyp, name) {
+				oaf.logger.Warn("component not found",
+					zap.String("name", name),
+					zap.String("def", ComponentTypeToDef(compTyp)))
+			}
+		}
 	}
 }
 
