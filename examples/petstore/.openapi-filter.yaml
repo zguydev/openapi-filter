@@ -8,13 +8,9 @@ tags: true
 externalDocs: true
 
 paths:
-  /pet:
-    - put
-    - post
-  /pet/{petId}/uploadImage:
-    - post
-  /user/login:
-    - get
+  /pet: [ post, put ]
+  /pet/{petId}/uploadImage: [ post ]
+  /user/login: [ get ]
 
 components:
   securitySchemes:

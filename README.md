@@ -53,13 +53,9 @@ externalDocs: true
 # Specify paths and methods to keep.
 # If a path is listed, only the specified methods are kept.
 paths:
-  /pets:
-    - post
-    - put
-  /pet/{petId}/uploadImage:
-    - post
-  /user/login:
-    - get
+  /pets: [ post, put ]
+  /pet/{petId}/uploadImage: [ post ]
+  /user/login: [ get ]
   # Paths not listed here will be removed.
 
 # Specify components to keep.
@@ -70,8 +66,8 @@ components:
     - User
     - Error
   securitySchemes:
-    - bearerAuth
-  # Components not listed (and not referenced) will be removed.
+    - petstore_auth
+  # Components not listed (that are not referenced from kept paths) will be removed.
 ```
 
 ## Examples
