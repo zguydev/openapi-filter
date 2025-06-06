@@ -15,7 +15,7 @@ type OpenAPISpecFilter struct {
 	logger *zap.Logger
 	loader *openapi3.Loader
 
-	filtered, doc *openapi3.T
+	doc, filtered *openapi3.T
 }
 
 func NewOpenAPISpecFilter(
@@ -80,8 +80,8 @@ func (oaf *OpenAPISpecFilter) filterPaths(collector *RefsCollector) {
 			op := oaf.getOperation(pathItem, method, path)
 			if op == nil {
 				oaf.logger.Warn("method not exists for specified path",
-					zap.String("path", path),
-					zap.String("method", method))
+					zap.String("method", method),
+					zap.String("path", path))
 				continue
 			}
 			if !oaf.setOperation(newPathItem, method, path, op) {
@@ -103,8 +103,8 @@ func (oaf *OpenAPISpecFilter) getOperation(
 	defer func() {
 		if r := recover(); r != nil {
 			oaf.logger.Warn("unknown HTTP method in filter config",
-				zap.String("path", path),
-				zap.String("method", method))
+				zap.String("method", method),
+				zap.String("path", path))
 			op = nil
 		}
 	}()
@@ -119,8 +119,8 @@ func (oaf *OpenAPISpecFilter) setOperation(
 	defer func() {
 		if r := recover(); r != nil {
 			oaf.logger.Warn("unknown HTTP method in spec",
-				zap.String("path", path),
-				zap.String("method", method))
+				zap.String("method", method),
+				zap.String("path", path))
 			ok = false
 		}
 	}()
@@ -148,16 +148,19 @@ func (oaf *OpenAPISpecFilter) filterRef(ref string) {
 	compType, ok := ComponentDefToType(def)
 	if !ok {
 		oaf.logger.Warn("unknown component definition",
-			zap.String("def", def), zap.String("ref", ref))
+			zap.String("def", def),
+			zap.String("name", name),
+			zap.String("ref", ref))
 		return
 	}
-	if !processCopyComponent(
-		oaf.doc.Components,
+	if !processCopyComponent(oaf.doc.Components,
 		oaf.filtered.Components,
-		compType, name) {
+		compType,
+		name,
+	) {
 		oaf.logger.Warn("component not found",
-			zap.String("name", name),
 			zap.String("def", def),
+			zap.String("name", name),
 			zap.String("ref", ref))
 	}
 }
@@ -169,13 +172,14 @@ func (oaf *OpenAPISpecFilter) filterComponents() {
 
 	for _, compTyp := range ComponentTypes() {
 		for _, name := range ComponentTypeToCfgNames(oaf.cfg.Components, compTyp) {
-			if !processCopyComponent(
-				oaf.doc.Components,
+			if !processCopyComponent(oaf.doc.Components,
 				oaf.filtered.Components,
-				compTyp, name) {
+				compTyp,
+				name,
+			) {
 				oaf.logger.Warn("component not found",
-					zap.String("name", name),
-					zap.String("def", ComponentTypeToDef(compTyp)))
+					zap.String("def", ComponentTypeToDef(compTyp)),
+					zap.String("name", name))
 			}
 		}
 	}
