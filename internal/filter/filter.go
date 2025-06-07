@@ -15,9 +15,10 @@ import (
 
 // OpenAPISpecFilter is the main type that handles filtering of OpenAPI specs.
 type OpenAPISpecFilter struct {
-	cfg    *config.FilterConfig
-	logger *zap.Logger
-	loader *openapi3.Loader
+	cfg       *config.FilterConfig
+	logger    *zap.Logger
+	loader    *openapi3.Loader
+	collector *RefsCollector
 
 	doc, filtered *openapi3.T
 }
@@ -34,20 +35,21 @@ func NewOpenAPISpecFilter(
 	}
 
 	return &OpenAPISpecFilter{
-		cfg:    &cfg.FilterConfig,
-		logger: logger,
-		loader: loader,
+		cfg:       &cfg.FilterConfig,
+		logger:    logger,
+		loader:    loader,
+		collector: NewRefsCollector(),
 	}
 }
 
-// Filter processes an OpenAPI specification file according to the configured 
+// Filter processes an OpenAPI spec file according to the configured
 // filters and writes the filtered result to the specified output path.
-// It handles loading, filtering, and writing of the specification while
+// It handles loading, filtering, and writing of the spec while
 // maintaining all necessary references and components.
 //
 // Parameters:
-//   - inputSpecPath: Path to the input OpenAPI specification file
-//   - outSpecPath: Path where the filtered specification will be written
+//   - inputSpecPath: Path to the input OpenAPI spec file
+//   - outSpecPath: Path where the filtered spec will be written
 //
 // Returns an error if any step of the filtering process fails.
 func (oaf *OpenAPISpecFilter) Filter(inputSpecPath, outSpecPath string) error {
@@ -65,11 +67,10 @@ func (oaf *OpenAPISpecFilter) Filter(inputSpecPath, outSpecPath string) error {
 		Paths:      &openapi3.Paths{},
 	}
 
-	collector := NewRefsCollector()
-
-	oaf.filterPaths(collector)
+	oaf.filterPaths()
 	oaf.filterComponents()
 	oaf.filterOther()
+	oaf.filterRefs()
 	if isEmptyComponents(oaf.filtered.Components) {
 		oaf.filtered.Components = nil
 	}
@@ -85,8 +86,8 @@ func (oaf *OpenAPISpecFilter) Filter(inputSpecPath, outSpecPath string) error {
 
 // filterPaths processes the paths specified in the configuration and filters them
 // according to the allowed methods. It also collects all references used in the
-// filtered paths and processes them.
-func (oaf *OpenAPISpecFilter) filterPaths(collector *RefsCollector) {
+// filtered paths.
+func (oaf *OpenAPISpecFilter) filterPaths() {
 	for path, methods := range oaf.cfg.Paths {
 		pathItem := oaf.doc.Paths.Find(path)
 		if pathItem == nil {
@@ -106,13 +107,11 @@ func (oaf *OpenAPISpecFilter) filterPaths(collector *RefsCollector) {
 			if !oaf.setOperation(newPathItem, method, path, op) {
 				continue
 			}
-			collector.CollectOperation(op)
+			oaf.collector.CollectOperation(op)
 		}
 
 		oaf.filtered.Paths.Set(path, newPathItem)
 	}
-
-	oaf.filterRefs(collector.Refs())
 }
 
 // getOperation safely retrieves an operation from a PathItem for the specified
@@ -154,15 +153,15 @@ func (oaf *OpenAPISpecFilter) setOperation(
 }
 
 // filterRefs processes all collected references and ensures they are properly
-// included in the filtered specification.
-func (oaf *OpenAPISpecFilter) filterRefs(refs map[string]struct{}) {
-	for ref := range refs {
+// included in the filtered spec.
+func (oaf *OpenAPISpecFilter) filterRefs() {
+	for ref := range oaf.collector.refs {
 		oaf.filterRef(ref)
 	}
 }
 
 // filterRef processes a single reference and copies the referenced component
-// to the filtered specification if it exists in the original.
+// to the filtered spec.
 func (oaf *OpenAPISpecFilter) filterRef(ref string) {
 	if oaf.doc.Components == nil {
 		return
@@ -195,7 +194,7 @@ func (oaf *OpenAPISpecFilter) filterRef(ref string) {
 }
 
 // filterComponents processes all components specified in the configuration and
-// copies them to the filtered specification if they exist in the original.
+// copies them to the filtered spec.
 func (oaf *OpenAPISpecFilter) filterComponents() {
 	if oaf.cfg.Components == nil || oaf.doc.Components == nil {
 		return
@@ -211,7 +210,9 @@ func (oaf *OpenAPISpecFilter) filterComponents() {
 				oaf.logger.Warn("component not found",
 					zap.String("def", ComponentTypeToDef(compTyp)),
 					zap.String("name", name))
+				continue
 			}
+			CollectComponent(oaf.collector, oaf.doc.Components, compTyp, name)
 		}
 	}
 }
