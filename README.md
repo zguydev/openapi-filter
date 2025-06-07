@@ -37,9 +37,9 @@ The filter configuration file (e.g., `.openapi-filter.yaml`) specifies what part
 # Tool-specific configurations (optional)
 x-openapi-filter:
   logger:
-    level: info # e.g., debug, info, warn, error
+    level: info # Log level (e.g., "debug", "info", "warn", "error")
   loader:
-    external_refs_allowed: false # Controls resolution of external $refs
+    external_refs_allowed: false # Whether to allow external references
 
 # Keep or discard server information (default: false)
 servers: true
