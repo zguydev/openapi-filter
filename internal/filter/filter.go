@@ -1,3 +1,6 @@
+// Package filter provides functionality to filter OpenAPI specs based
+// on config. It allows filtering of paths, methods, components,
+// and other OpenAPI elements while maintaining the integrity of the spec.
 package filter
 
 import (
@@ -10,6 +13,7 @@ import (
 	"github.com/zguydev/openapi-filter/internal/config"
 )
 
+// OpenAPISpecFilter is the main type that handles filtering of OpenAPI specs.
 type OpenAPISpecFilter struct {
 	cfg    *config.FilterConfig
 	logger *zap.Logger
@@ -18,6 +22,8 @@ type OpenAPISpecFilter struct {
 	doc, filtered *openapi3.T
 }
 
+// NewOpenAPISpecFilter creates a new OpenAPISpecFilter instance with the
+// provided configuration and logger. It initializes the OpenAPI loader.
 func NewOpenAPISpecFilter(
 	cfg *config.Config,
 	logger *zap.Logger,
@@ -34,6 +40,16 @@ func NewOpenAPISpecFilter(
 	}
 }
 
+// Filter processes an OpenAPI specification file according to the configured 
+// filters and writes the filtered result to the specified output path.
+// It handles loading, filtering, and writing of the specification while
+// maintaining all necessary references and components.
+//
+// Parameters:
+//   - inputSpecPath: Path to the input OpenAPI specification file
+//   - outSpecPath: Path where the filtered specification will be written
+//
+// Returns an error if any step of the filtering process fails.
 func (oaf *OpenAPISpecFilter) Filter(inputSpecPath, outSpecPath string) error {
 	var err error
 	oaf.doc, err = loadSpecFromFile(oaf.loader, inputSpecPath)
@@ -67,6 +83,9 @@ func (oaf *OpenAPISpecFilter) Filter(inputSpecPath, outSpecPath string) error {
 	return nil
 }
 
+// filterPaths processes the paths specified in the configuration and filters them
+// according to the allowed methods. It also collects all references used in the
+// filtered paths and processes them.
 func (oaf *OpenAPISpecFilter) filterPaths(collector *RefsCollector) {
 	for path, methods := range oaf.cfg.Paths {
 		pathItem := oaf.doc.Paths.Find(path)
@@ -96,6 +115,9 @@ func (oaf *OpenAPISpecFilter) filterPaths(collector *RefsCollector) {
 	oaf.filterRefs(collector.Refs())
 }
 
+// getOperation safely retrieves an operation from a PathItem for the specified
+// method. It handles unknown HTTP methods gracefully and returns nil if the
+// method is invalid.
 func (oaf *OpenAPISpecFilter) getOperation(
 	p *openapi3.PathItem,
 	method, path string,
@@ -111,6 +133,9 @@ func (oaf *OpenAPISpecFilter) getOperation(
 	return p.GetOperation(strings.ToUpper(method))
 }
 
+// setOperation safely sets an operation in a PathItem for the specified method.
+// It handles unknown HTTP methods gracefully and returns false if the method
+// is invalid.
 func (oaf *OpenAPISpecFilter) setOperation(
 	p *openapi3.PathItem,
 	method, path string,
@@ -128,12 +153,16 @@ func (oaf *OpenAPISpecFilter) setOperation(
 	return true
 }
 
+// filterRefs processes all collected references and ensures they are properly
+// included in the filtered specification.
 func (oaf *OpenAPISpecFilter) filterRefs(refs map[string]struct{}) {
 	for ref := range refs {
 		oaf.filterRef(ref)
 	}
 }
 
+// filterRef processes a single reference and copies the referenced component
+// to the filtered specification if it exists in the original.
 func (oaf *OpenAPISpecFilter) filterRef(ref string) {
 	if oaf.doc.Components == nil {
 		return
@@ -165,6 +194,8 @@ func (oaf *OpenAPISpecFilter) filterRef(ref string) {
 	}
 }
 
+// filterComponents processes all components specified in the configuration and
+// copies them to the filtered specification if they exist in the original.
 func (oaf *OpenAPISpecFilter) filterComponents() {
 	if oaf.cfg.Components == nil || oaf.doc.Components == nil {
 		return
@@ -185,6 +216,8 @@ func (oaf *OpenAPISpecFilter) filterComponents() {
 	}
 }
 
+// filterOther processes additional OpenAPI elements specified in the configuration,
+// including servers, security requirements, tags, and external documentation.
 func (oaf *OpenAPISpecFilter) filterOther() {
 	if oaf.cfg.Servers {
 		oaf.filtered.Servers = oaf.doc.Servers
