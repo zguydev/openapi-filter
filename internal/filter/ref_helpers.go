@@ -16,9 +16,9 @@ func parseRef(ref string) (def, name string, ok bool) {
 	return def, name, true
 }
 
-func initializeComponentMap[M ~map[string]V, V any](targetMap *M) bool {
-	if *targetMap == nil {
-		*targetMap = make(M)
+func initializeComponentMap[M ~map[string]V, V any](compMap *M) (inited bool) {
+	if *compMap == nil {
+		*compMap = make(M)
 		return true
 	}
 	return false
@@ -78,70 +78,99 @@ func processCopyComponent(
 }
 
 func setComponentMapInComponents[T any](
-	components *openapi3.Components,
+	comps *openapi3.Components,
 	typ ComponentType,
 	compMap map[string]T,
 ) {
 	switch typ {
 	case ComponentTypeSchema:
-		components.Schemas = any(compMap).(map[string]*openapi3.SchemaRef)
+		comps.Schemas = any(compMap).(map[string]*openapi3.SchemaRef)
 	case ComponentTypeParameter:
-		components.Parameters = any(compMap).(map[string]*openapi3.ParameterRef)
+		comps.Parameters = any(compMap).(map[string]*openapi3.ParameterRef)
 	case ComponentTypeHeader:
-		components.Headers = any(compMap).(map[string]*openapi3.HeaderRef)
+		comps.Headers = any(compMap).(map[string]*openapi3.HeaderRef)
 	case ComponentTypeRequestBody:
-		components.RequestBodies = any(compMap).(map[string]*openapi3.RequestBodyRef)
+		comps.RequestBodies = any(compMap).(map[string]*openapi3.RequestBodyRef)
 	case ComponentTypeResponse:
-		components.Responses = any(compMap).(map[string]*openapi3.ResponseRef)
+		comps.Responses = any(compMap).(map[string]*openapi3.ResponseRef)
 	case ContentTypeSecuritySchema:
-		components.SecuritySchemes = any(compMap).(map[string]*openapi3.SecuritySchemeRef)
+		comps.SecuritySchemes = any(compMap).(map[string]*openapi3.SecuritySchemeRef)
 	case ContentTypeExample:
-		components.Examples = any(compMap).(map[string]*openapi3.ExampleRef)
+		comps.Examples = any(compMap).(map[string]*openapi3.ExampleRef)
 	case ContentTypeLink:
-		components.Links = any(compMap).(map[string]*openapi3.LinkRef)
+		comps.Links = any(compMap).(map[string]*openapi3.LinkRef)
 	case ContentTypeCallback:
-		components.Callbacks = any(compMap).(map[string]*openapi3.CallbackRef)
+		comps.Callbacks = any(compMap).(map[string]*openapi3.CallbackRef)
 	default:
 		panic(fmt.Errorf("unsupported component type: %v", typ))
 	}
 }
 
 func isComponentMapEmpty(
-	components *openapi3.Components,
+	comps *openapi3.Components,
 	typ ComponentType,
 ) bool {
 	switch typ {
 	case ComponentTypeSchema:
-		return len(components.Schemas) != 0
+		return len(comps.Schemas) != 0
 	case ComponentTypeParameter:
-		return len(components.Parameters) != 0
+		return len(comps.Parameters) != 0
 	case ComponentTypeHeader:
-		return len(components.Headers) != 0
+		return len(comps.Headers) != 0
 	case ComponentTypeRequestBody:
-		return len(components.RequestBodies) != 0
+		return len(comps.RequestBodies) != 0
 	case ComponentTypeResponse:
-		return len(components.Responses) != 0
+		return len(comps.Responses) != 0
 	case ContentTypeSecuritySchema:
-		return len(components.SecuritySchemes) != 0
+		return len(comps.SecuritySchemes) != 0
 	case ContentTypeExample:
-		return len(components.Examples) != 0
+		return len(comps.Examples) != 0
 	case ContentTypeLink:
-		return len(components.Links) != 0
+		return len(comps.Links) != 0
 	case ContentTypeCallback:
-		return len(components.Callbacks) != 0
+		return len(comps.Callbacks) != 0
 	default:
 		panic(fmt.Errorf("unsupported component type: %v", typ))
 	}
 }
 
-func isEmptyComponents(c *openapi3.Components) bool {
-	if c == nil {
+func isEmptyComponents(comps *openapi3.Components) bool {
+	if comps == nil {
 		return true
 	}
 	for _, compTyp := range ComponentTypes() {
-		if !isComponentMapEmpty(c, compTyp) {
+		if !isComponentMapEmpty(comps, compTyp) {
 			return false
 		}
 	}
 	return true
+}
+
+func CollectComponent(rc *RefsCollector,
+	comps *openapi3.Components,
+	typ ComponentType,
+	name string,
+) {
+	switch typ {
+	case ComponentTypeSchema:
+		rc.collectSchemaRef(comps.Schemas[name])
+	case ComponentTypeParameter:
+		rc.collectParameterRef(comps.Parameters[name])
+	case ComponentTypeHeader:
+		rc.collectHeaderRef(comps.Headers[name])
+	case ComponentTypeRequestBody:
+		rc.collectRequestBodyRef(comps.RequestBodies[name])
+	case ComponentTypeResponse:
+		rc.collectResponseRef(comps.Responses[name])
+	case ContentTypeSecuritySchema:
+		rc.collectSecurityScheme(comps.SecuritySchemes[name])
+	case ContentTypeExample:
+		rc.collectExampleRef(comps.Examples[name])
+	case ContentTypeLink:
+		rc.collectLinkRef(comps.Links[name])
+	case ContentTypeCallback:
+		rc.collectCallbackRef(comps.Callbacks[name])
+	default:
+		panic(fmt.Errorf("unsupported component type: %v", typ))
+	}
 }

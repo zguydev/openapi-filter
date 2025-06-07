@@ -10,11 +10,8 @@ tags: true
 externalDocs: false
 
 paths:
-  /api/example:
-    - get
-    - post
-  /api/some-another:
-    - put
+  /api/example: [ get, post ]
+  /api/some-another-example: [ put ]
 
 components:
   securitySchemes:

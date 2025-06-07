@@ -11,7 +11,7 @@ external_refs_allowed = false
 
 [paths]
 "/api/example" = [ "get", "post" ]
-"/api/some-another" = [ "put" ]
+"/api/some-another-example" = [ "put" ]
 
 [components]
 securitySchemes = [ "ApiKeyAuth" ]

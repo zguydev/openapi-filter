@@ -3,14 +3,12 @@ x-openapi-filter:
     level: debug
 
 servers: true
+security: true
+tags: true
 
 paths:
-  /chat/completions:
-    - post
+  /chat/completions: [ post ]
 
 components:
   securitySchemes:
     - ApiKeyAuth
-
-security: true
-tags: true
