@@ -1,6 +1,12 @@
-package filter
+package refs
 
-import "github.com/getkin/kin-openapi/openapi3"
+import (
+	"fmt"
+
+	"github.com/getkin/kin-openapi/openapi3"
+
+	"github.com/zguydev/openapi-filter/internal/components"
+)
 
 type RefsCollector struct {
 	refs map[string]struct{}
@@ -207,5 +213,34 @@ func (rc *RefsCollector) collectSecurityScheme(secsc *openapi3.SecuritySchemeRef
 func (rc *RefsCollector) collectExampleRef(exr *openapi3.ExampleRef) {
 	if exr.Ref != "" {
 		rc.AddRef(exr.Ref)
+	}
+}
+
+func (rc *RefsCollector) CollectComponent(
+	comps *openapi3.Components,
+	typ components.ComponentType,
+	name string,
+) {
+	switch typ {
+	case components.ComponentTypeSchema:
+		rc.collectSchemaRef(comps.Schemas[name])
+	case components.ComponentTypeParameter:
+		rc.collectParameterRef(comps.Parameters[name])
+	case components.ComponentTypeHeader:
+		rc.collectHeaderRef(comps.Headers[name])
+	case components.ComponentTypeRequestBody:
+		rc.collectRequestBodyRef(comps.RequestBodies[name])
+	case components.ComponentTypeResponse:
+		rc.collectResponseRef(comps.Responses[name])
+	case components.ContentTypeSecuritySchema:
+		rc.collectSecurityScheme(comps.SecuritySchemes[name])
+	case components.ContentTypeExample:
+		rc.collectExampleRef(comps.Examples[name])
+	case components.ContentTypeLink:
+		rc.collectLinkRef(comps.Links[name])
+	case components.ContentTypeCallback:
+		rc.collectCallbackRef(comps.Callbacks[name])
+	default:
+		panic(fmt.Errorf("unsupported component type: %v", typ))
 	}
 }
