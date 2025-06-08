@@ -7,7 +7,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/zguydev/openapi-filter/internal/config"
+	"github.com/zguydev/openapi-filter/pkg/config"
 )
 
 func NewFallbackLogger() *zap.Logger {

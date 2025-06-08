@@ -1,11 +1,11 @@
-package filter
+package components
 
 import (
 	"fmt"
 
 	"github.com/getkin/kin-openapi/openapi3"
 
-	"github.com/zguydev/openapi-filter/internal/config"
+	"github.com/zguydev/openapi-filter/pkg/config"
 )
 
 type ComponentType int

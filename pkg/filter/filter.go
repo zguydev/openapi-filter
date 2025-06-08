@@ -4,61 +4,43 @@
 package filter
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"go.uber.org/zap"
 
-	"github.com/zguydev/openapi-filter/internal/config"
+	"github.com/zguydev/openapi-filter/internal/components"
+	"github.com/zguydev/openapi-filter/internal/refs"
+	"github.com/zguydev/openapi-filter/pkg/config"
 )
 
 // OpenAPISpecFilter is the main type that handles filtering of OpenAPI specs.
 type OpenAPISpecFilter struct {
 	cfg       *config.FilterConfig
 	logger    *zap.Logger
-	loader    *openapi3.Loader
-	collector *RefsCollector
+	collector *refs.RefsCollector
 
 	doc, filtered *openapi3.T
 }
 
 // NewOpenAPISpecFilter creates a new OpenAPISpecFilter instance with the
-// provided configuration and logger. It initializes the OpenAPI loader.
+// provided configuration and logger.
 func NewOpenAPISpecFilter(
 	cfg *config.Config,
 	logger *zap.Logger,
 ) *OpenAPISpecFilter {
-	loader := openapi3.NewLoader()
-	if cfg.Tool.Loader != nil {
-		loader.IsExternalRefsAllowed = cfg.Tool.Loader.IsExternalRefsAllowed
-	}
-
 	return &OpenAPISpecFilter{
 		cfg:       &cfg.FilterConfig,
 		logger:    logger,
-		loader:    loader,
-		collector: NewRefsCollector(),
+		collector: refs.NewRefsCollector(),
 	}
 }
 
-// Filter processes an OpenAPI spec file according to the configured
-// filters and writes the filtered result to the specified output path.
-// It handles loading, filtering, and writing of the spec while
-// maintaining all necessary references and components.
-//
-// Parameters:
-//   - inputSpecPath: Path to the input OpenAPI spec file
-//   - outSpecPath: Path where the filtered spec will be written
-//
+// Filter processes an OpenAPI spec according to the configured
+// filters and returns a filtered spec.
 // Returns an error if any step of the filtering process fails.
-func (oaf *OpenAPISpecFilter) Filter(inputSpecPath, outSpecPath string) error {
-	var err error
-	oaf.doc, err = loadSpecFromFile(oaf.loader, inputSpecPath)
-	if err != nil {
-		oaf.logger.Error("failed to load spec from file", zap.Error(err))
-		return fmt.Errorf("loadSpecFromFile: %w", err)
-	}
+func (oaf *OpenAPISpecFilter) Filter(doc *openapi3.T) (filtered *openapi3.T, err error) {
+	oaf.doc = doc
 
 	oaf.filtered = &openapi3.T{
 		OpenAPI:    oaf.doc.OpenAPI,
@@ -71,17 +53,10 @@ func (oaf *OpenAPISpecFilter) Filter(inputSpecPath, outSpecPath string) error {
 	oaf.filterComponents()
 	oaf.filterOther()
 	oaf.filterRefs()
-	if isEmptyComponents(oaf.filtered.Components) {
+	if components.IsEmptyComponents(oaf.filtered.Components) {
 		oaf.filtered.Components = nil
 	}
-
-	if err := writeSpecToFile(oaf.filtered, outSpecPath); err != nil {
-		oaf.logger.Error("failed to write output spec file", zap.Error(err))
-		return fmt.Errorf("writeSpecToFile: %w", err)
-	}
-	oaf.logger.Info("filtered and saved spec",
-		zap.String("output", outSpecPath))
-	return nil
+	return oaf.filtered, nil
 }
 
 // filterPaths processes the paths specified in the configuration and filters them
@@ -114,7 +89,7 @@ func (oaf *OpenAPISpecFilter) filterPaths() {
 	}
 }
 
-// getOperation safely retrieves an operation from a PathItem for the specified
+// getOperation safely retrieves an operation from [openapi3.PathItem] for the specified
 // method. It handles unknown HTTP methods gracefully and returns nil if the
 // method is invalid.
 func (oaf *OpenAPISpecFilter) getOperation(
@@ -132,7 +107,7 @@ func (oaf *OpenAPISpecFilter) getOperation(
 	return p.GetOperation(strings.ToUpper(method))
 }
 
-// setOperation safely sets an operation in a PathItem for the specified method.
+// setOperation safely sets an operation in [openapi3.PathItem] for the specified method.
 // It handles unknown HTTP methods gracefully and returns false if the method
 // is invalid.
 func (oaf *OpenAPISpecFilter) setOperation(
@@ -155,7 +130,7 @@ func (oaf *OpenAPISpecFilter) setOperation(
 // filterRefs processes all collected references and ensures they are properly
 // included in the filtered spec.
 func (oaf *OpenAPISpecFilter) filterRefs() {
-	for ref := range oaf.collector.refs {
+	for ref := range oaf.collector.Refs() {
 		oaf.filterRef(ref)
 	}
 }
@@ -167,13 +142,13 @@ func (oaf *OpenAPISpecFilter) filterRef(ref string) {
 		return
 	}
 
-	def, name, ok := parseRef(ref)
+	def, name, ok := refs.ParseRef(ref)
 	if !ok {
 		oaf.logger.Warn("incorrect ref", zap.String("ref", ref))
 		return
 	}
 
-	compType, ok := ComponentDefToType(def)
+	compType, ok := components.ComponentDefToType(def)
 	if !ok {
 		oaf.logger.Warn("unknown component definition",
 			zap.String("def", def),
@@ -181,7 +156,8 @@ func (oaf *OpenAPISpecFilter) filterRef(ref string) {
 			zap.String("ref", ref))
 		return
 	}
-	if !processCopyComponent(oaf.doc.Components,
+	if !components.ProcessCopyComponent(
+		oaf.doc.Components,
 		oaf.filtered.Components,
 		compType,
 		name,
@@ -200,19 +176,20 @@ func (oaf *OpenAPISpecFilter) filterComponents() {
 		return
 	}
 
-	for _, compTyp := range ComponentTypes() {
-		for _, name := range ComponentTypeToCfgNames(oaf.cfg.Components, compTyp) {
-			if !processCopyComponent(oaf.doc.Components,
+	for _, compTyp := range components.ComponentTypes() {
+		for _, name := range components.ComponentTypeToCfgNames(oaf.cfg.Components, compTyp) {
+			if !components.ProcessCopyComponent(
+				oaf.doc.Components,
 				oaf.filtered.Components,
 				compTyp,
 				name,
 			) {
 				oaf.logger.Warn("component not found",
-					zap.String("def", ComponentTypeToDef(compTyp)),
+					zap.String("def", components.ComponentTypeToDef(compTyp)),
 					zap.String("name", name))
 				continue
 			}
-			CollectComponent(oaf.collector, oaf.doc.Components, compTyp, name)
+			oaf.collector.CollectComponent(oaf.doc.Components, compTyp, name)
 		}
 	}
 }

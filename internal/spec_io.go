@@ -1,4 +1,4 @@
-package filter
+package internal
 
 import (
 	"fmt"
@@ -8,15 +8,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func loadSpecFromFile(loader *openapi3.Loader, specPath string) (*openapi3.T, error) {
+func LoadSpecFromFile(loader *openapi3.Loader, specPath string) (*openapi3.T, error) {
 	doc, err := loader.LoadFromFile(specPath)
 	if err != nil {
-		return nil, fmt.Errorf("oaf.loader.LoadFromFile: %w", err)
+		return nil, fmt.Errorf("loader.LoadFromFile: %w", err)
 	}
 	return doc, nil
 }
 
-func writeSpecToFile(doc *openapi3.T, specPath string) error {
+func WriteSpecToFile(doc *openapi3.T, specPath string) error {
 	yamlData, err := doc.MarshalYAML()
 	if err != nil {
 		return fmt.Errorf("doc.MarshalYAML: %w", err)
