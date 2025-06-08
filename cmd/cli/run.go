@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -16,6 +17,12 @@ import (
 func run(cmd *cobra.Command, args []string) {
 	fallbackLogger := utils.NewFallbackLogger()
 	defer fallbackLogger.Sync() //nolint:errcheck
+
+	if ok, _ := cmd.Flags().GetBool("version"); ok {
+		info, _ := internal.GetInfo()
+		fmt.Println(info)
+		return
+	}
 
 	configPath, err := cmd.Flags().GetString("config")
 	if err != nil {
