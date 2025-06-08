@@ -6,9 +6,11 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"github.com/zguydev/openapi-filter/internal/config"
-	"github.com/zguydev/openapi-filter/internal/filter"
+	"github.com/zguydev/openapi-filter/internal"
 	"github.com/zguydev/openapi-filter/internal/utils"
+	"github.com/zguydev/openapi-filter/pkg/config"
+	"github.com/zguydev/openapi-filter/pkg/filter"
+	"github.com/zguydev/openapi-filter/pkg/loader"
 )
 
 func run(cmd *cobra.Command, args []string) {
@@ -30,10 +32,26 @@ func run(cmd *cobra.Command, args []string) {
 		fallbackLogger.Fatal("failed to init logger", zap.Error(err))
 	}
 
-	oaf := filter.NewOpenAPISpecFilter(cfg, logger)
 	inputSpecPath, outSpecPath := args[0], args[1]
-	if err := oaf.Filter(inputSpecPath, outSpecPath); err != nil {
+
+	inputSpec, err := internal.LoadSpecFromFile(
+		loader.NewLoader(cfg.Tool.Loader), inputSpecPath)
+	if err != nil {
+		logger.Error("failed to load spec from file",
+			zap.Error(err), zap.String("path", inputSpecPath))
+		os.Exit(1)
+	}
+	oaf := filter.NewOpenAPISpecFilter(cfg, logger)
+	outSpec, err := oaf.Filter(inputSpec)
+	if err != nil {
 		logger.Error("filter on spec failed", zap.Error(err))
 		os.Exit(1)
 	}
+
+	if err := internal.WriteSpecToFile(outSpec, outSpecPath); err != nil {
+		logger.Error("failed to write filtered spec file",
+			zap.Error(err), zap.String("path", outSpecPath))
+		os.Exit(1)
+	}
+	logger.Info("filtered and saved spec", zap.String("path", outSpecPath))
 }
