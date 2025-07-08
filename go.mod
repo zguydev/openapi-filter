@@ -7,13 +7,15 @@ toolchain go1.24.4
 require (
 	github.com/getkin/kin-openapi v0.132.0
 	github.com/knadh/koanf/parsers/json v1.0.0
-	github.com/knadh/koanf/parsers/yaml v1.0.0
+	github.com/knadh/koanf/parsers/yaml v1.1.0
 	github.com/knadh/koanf/providers/file v1.2.0
 	github.com/knadh/koanf/v2 v2.2.0
 	github.com/spf13/cobra v1.9.1
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+require go.yaml.in/yaml/v3 v3.0.3 // indirect
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
